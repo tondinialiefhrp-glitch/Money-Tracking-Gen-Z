@@ -3,294 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SlayBank v11: Ultimate Edition</title>
+    <title>SlayBank v12: Google Cloud</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #00f2ea; --accent: #00ff87; --bg: #050505; --surface: #111; 
-            --glass: rgba(255, 255, 255, 0.05); --red: #ff3e3e; transition: 0.5s; 
-        }
+        :root { --primary: #00f2ea; --accent: #00ff87; --bg: #050505; --surface: #111; --glass: rgba(255, 255, 255, 0.05); --red: #ff3e3e; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; }
         .app { width: 100%; max-width: 430px; min-height: 100vh; padding: 24px; box-sizing: border-box; }
-        .view { display: none; }
-        .view.active { display: block; animation: slideUp 0.4s ease; }
+        .view { display: none; } .view.active { display: block; animation: slideUp 0.4s ease; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Goal & Balance Card */
         .card { background: var(--surface); border-radius: 28px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--glass); }
         .track { width: 100%; height: 40px; background: #222; border-radius: 20px; margin-top: 15px; position: relative; display: flex; align-items: center; padding: 0 10px; box-sizing: border-box; overflow: hidden; }
         .runner { font-size: 1.6rem; position: absolute; left: 10px; transition: 1s; z-index: 5; }
         .bar-fill { height: 8px; background: linear-gradient(to right, var(--primary), var(--accent)); border-radius: 10px; width: 0%; transition: 1s ease; opacity: 0.8; }
         .balance { font-size: 2.3rem; font-weight: 800; color: white; margin: 10px 0; letter-spacing: -1px; }
-
-        /* Grid System */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .item { background: var(--surface); padding: 20px; border-radius: 25px; border: 1px solid var(--glass); text-align: center; cursor: pointer; transition: 0.2s; }
-        .item:active { transform: scale(0.95); }
+        .item { background: var(--surface); padding: 20px; border-radius: 25px; border: 1px solid var(--glass); text-align: center; cursor: pointer; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; padding: 25px; z-index: 1000; box-sizing: border-box; }
+        .btn { background: linear-gradient(to right, var(--primary), var(--accent)); color: #000; border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; }
         
-        /* Modal & Report Overlay */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; padding: 25px; z-index: 1000; box-sizing: border-box; overflow-y: auto; }
-        .btn { background: linear-gradient(to right, var(--primary), var(--accent)); color: #000; border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
-        .btn-outline { background: transparent; color: white; border: 1px solid var(--glass); padding: 15px; border-radius: 15px; width: 100%; margin-top: 10px; cursor: pointer; font-size: 0.8rem; }
+        /* Modal Style */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; box-sizing: border-box; }
+        .modal-box { background: #111; border: 1px solid var(--primary); width: 100%; max-width: 350px; border-radius: 25px; padding: 30px; text-align: center; }
+        .modal-box input { width: 100%; background: #000; border: 1px solid #333; padding: 15px; border-radius: 12px; color: white; margin: 20px 0; text-align: center; }
         
-        /* Custom Dialog Style */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-            display: none; align-items: center; justify-content: center; z-index: 2000;
-            padding: 20px; box-sizing: border-box;
-        }
-        .modal-box {
-            background: #111; border: 1px solid var(--primary);
-            width: 100%; max-width: 350px; border-radius: 25px;
-            padding: 30px; text-align: center; animation: popUp 0.3s ease;
-        }
-        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-box h3 { margin-top: 0; font-size: 1.2rem; color: var(--primary); }
-        .modal-box input {
-            width: 100%; background: #000; border: 1px solid #333;
-            padding: 15px; border-radius: 12px; color: white; margin: 20px 0;
-            text-align: center; font-family: inherit; font-size: 1.1rem; outline: none;
-        }
-        .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-cancel { background: #222; color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 600; }
-
-        #chartContainer { width: 220px; height: 220px; margin: 20px auto; }
-        .pdf-content { background: #000; padding: 10px; border-radius: 15px; }
+        /* Google Profile Info */
+        .profile-container { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; }
+        #userPic { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); display: none; }
     </style>
 </head>
 <body>
 
 <div class="app">
-    <div id="homeView" class="view active">
-        <div style="margin-bottom: 25px;">
-            <small style="opacity: 0.5;">Selamat datang back,</small>
-            <h2 style="margin: 0;">Halo, Tondini! 💎</h2>
+    <div id="loginView" class="view active" style="text-align: center; padding-top: 50px;">
+        <h1 style="font-size: 3rem; margin-bottom: 10px;">💎</h1>
+        <h2>Selamat Datang di SlayBank</h2>
+        <p style="opacity: 0.6; margin-bottom: 40px;">Kelola cuan lebih rapi & aesthetic.</p>
+        <div id="g_id_onload"
+             data-client_id="849830500755-900ps9a9o6mbe4qpg96024n6q068j56q.apps.googleusercontent.com" 
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" data-type="standard"></div>
+    </div>
+
+    <div id="mainView" class="view">
+        <div class="profile-container">
+            <img id="userPic" src="" alt="Profile">
+            <div>
+                <small style="opacity: 0.5;">Halo, selamat datang!</small>
+                <h3 id="userNameDisplay" style="margin: 0;">User</h3>
+            </div>
         </div>
 
         <div class="card" style="border-color: rgba(0, 242, 234, 0.2);">
-            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
                 <span onclick="editGoal()" style="border-bottom: 1px dashed var(--primary); cursor:pointer;">🎯 <span id="goalName">Set Target</span></span>
-                <span id="goalPercent" style="color: var(--primary);">0%</span>
+                <span id="goalPercent">0%</span>
             </div>
-            <div class="track">
-                <span class="runner" id="runnerPawn">🚶‍♂️</span>
-                <div id="progressBar" class="bar-fill"></div>
-            </div>
-            <div id="goalMotivation" style="font-size: 0.65rem; margin-top: 10px; text-align: center; opacity: 0.5;">Terkumpul: <span id="savedText">Rp 0</span></div>
+            <div class="track"><span class="runner" id="runnerPawn">🚶‍♂️</span><div id="progressBar" class="bar-fill"></div></div>
         </div>
 
-        <div class="card" style="text-align: center;" id="balanceCard">
-            <small style="opacity: 0.5; letter-spacing: 1px;">ESTIMASI SALDO</small>
+        <div class="card" style="text-align: center;">
+            <small style="opacity: 0.5;">SALDO ANDA</small>
             <div class="balance" id="totalBalance" onclick="adjustBalance()">Rp 0</div>
-            <div id="aiNote" style="font-size: 0.8rem; opacity: 0.6; margin-top: 10px; border-top: 1px solid #222; padding-top: 10px;">🤖 Kelola cuan dengan bijak!</div>
         </div>
 
         <div class="grid">
-            <div class="item" onclick="go('in')">💰<br><b style="display:block; margin-top:8px;">Cuan</b></div>
-            <div class="item" onclick="go('out')">💸<br><b style="display:block; margin-top:8px;">Bocor</b></div>
-            <div class="item" style="grid-column: span 2; border-color: var(--primary); background: rgba(0,242,234,0.03);" onclick="showReport()">
-                <b>📊 LIHAT LAPORAN DETAIL</b>
-            </div>
-            <div class="item" style="grid-column: span 2; opacity: 0.2; font-size: 0.7rem; padding: 10px;" onclick="resetAll()">RESET DATA</div>
+            <div class="item" onclick="go('in')">💰<br><b>Cuan</b></div>
+            <div class="item" onclick="go('out')">💸<br><b>Bocor</b></div>
+            <div class="item" style="grid-column: span 2; border-color: var(--primary);" onclick="showReport()"><b>📊 LAPORAN DETAIL</b></div>
+            <div class="item" style="grid-column: span 2; opacity: 0.2; font-size: 0.7rem;" onclick="logout()">LOGOUT / RESET</div>
         </div>
-    </div>
-
-    <div id="actionView" class="view">
-        <div onclick="back()" style="cursor:pointer; margin-bottom: 25px; opacity:0.6;">← Kembali</div>
-        <h2 id="actionTitle">Input</h2>
-        <input type="number" id="valInput" style="width: 100%; background: #000; border: 2px solid #222; padding: 20px; border-radius: 18px; color: white; margin-bottom: 20px; font-size: 1.5rem; text-align: center; outline: none;" placeholder="0">
-        <div id="catBox" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
-        <button class="btn" onclick="save()">SIMPAN TRANSAKSI ✨</button>
     </div>
 </div>
 
 <div id="customModal" class="modal-overlay">
     <div class="modal-box">
-        <h3 id="modalTitle">Input Data</h3>
-        <input type="text" id="modalInput" placeholder="...">
-        <div class="modal-btns">
-            <button class="btn-cancel" onclick="closeModal()">Batal</button>
-            <button class="btn" style="margin:0; padding:12px;" id="modalConfirmBtn">Oke</button>
+        <h3 id="modalTitle">Input</h3>
+        <input type="text" id="modalInput">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button onclick="closeModal()" style="background:#222; color:white; border:none; border-radius:12px; cursor:pointer;">Batal</button>
+            <button class="btn" style="margin:0;" id="modalConfirmBtn">Oke</button>
         </div>
     </div>
 </div>
 
 <div id="reportOverlay" class="overlay">
-    <div id="reportToPrint" class="pdf-content">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="margin:0;">Laporan SlayBank 🏆</h2>
-            <small style="opacity:0.6;" id="reportDate"></small>
-        </div>
-
-        <div id="chartContainer"><canvas id="myChart"></canvas></div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-            <div class="card" style="margin:0; text-align:center;"><small>Pemasukan</small><br><b style="color:var(--accent)" id="inText">Rp 0</b></div>
-            <div class="card" style="margin:0; text-align:center;"><small>Pengeluaran</small><br><b style="color:var(--red)" id="outText">Rp 0</b></div>
-        </div>
-
-        <div class="card" style="margin-top: 15px; border-color: var(--primary);">
-            <small style="opacity:0.6;">🎯 Progres: <b id="goalLabelText"></b></small><br>
-            <b id="goalValText">Rp 0 / Rp 0</b>
+    <div id="reportToPrint" style="background:#000; padding:15px; border-radius:15px;">
+        <h2 style="text-align:center;">Laporan SlayBank 🏆</h2>
+        <div style="width:200px; height:200px; margin:auto;"><canvas id="myChart"></canvas></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;">
+            <div class="card" style="text-align:center;"><small>Masuk</small><br><b id="inText">0</b></div>
+            <div class="card" style="text-align:center;"><small>Keluar</small><br><b id="outText">0</b></div>
         </div>
     </div>
-
-    <button class="btn" onclick="copyWA()">Salin Laporan (WhatsApp) 📱</button>
-    <button class="btn-outline" onclick="downloadPDF()">Unduh Laporan PDF 📄</button>
-    <button class="btn-outline" style="border:none; color:var(--red); margin-top: 20px;" onclick="document.getElementById('reportOverlay').style.display='none'">Tutup Laporan</button>
+    <button class="btn" onclick="copyWA()">Salin WA 📱</button>
+    <button class="btn" onclick="downloadPDF()" style="background:white; color:black;">Unduh PDF 📄</button>
+    <button onclick="document.getElementById('reportOverlay').style.display='none'" style="margin-top:20px; background:none; border:none; color:var(--red); cursor:pointer;">Tutup</button>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('slaybank_v11')) || {
-        balance: 0, saved: 0, target: 0, targetLabel: "Target Belanja",
-        logs: { in: 0, out: 0 }, catData: {}
+    // --- DATABASE & LOGIC ---
+    let db = JSON.parse(localStorage.getItem('slaybank_v12')) || {
+        balance: 0, saved: 0, target: 0, targetLabel: "Belanja", logs: {in:0, out:0}
     };
 
-    // --- CUSTOM MODAL SYSTEM ---
-    let currentModalAction = null;
-    function openModal(title, defaultVal, callback, type = "text") {
-        document.getElementById('modalTitle').innerText = title;
-        const input = document.getElementById('modalInput');
-        input.value = defaultVal;
-        input.type = type;
-        document.getElementById('customModal').style.display = 'flex';
-        currentModalAction = callback;
-        setTimeout(() => input.focus(), 100);
+    function handleCredentialResponse(response) {
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        document.getElementById('userNameDisplay').innerText = payload.name;
+        document.getElementById('userPic').src = payload.picture;
+        document.getElementById('userPic').style.display = 'block';
+        
+        document.getElementById('loginView').classList.remove('active');
+        document.getElementById('mainView').classList.add('active');
+        sync();
     }
-    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
-    document.getElementById('modalConfirmBtn').onclick = () => {
-        const val = document.getElementById('modalInput').value;
-        if (currentModalAction) currentModalAction(val);
-        closeModal();
-    };
 
-    // --- CORE LOGIC ---
-    function sync() { localStorage.setItem('slaybank_v11', JSON.stringify(db)); render(); }
-
+    function sync() { localStorage.setItem('slaybank_v12', JSON.stringify(db)); render(); }
+    
     function render() {
         document.getElementById('totalBalance').innerText = "Rp " + db.balance.toLocaleString('id-ID');
         document.getElementById('goalName').innerText = db.targetLabel;
-        document.getElementById('savedText').innerText = "Rp " + db.saved.toLocaleString('id-ID');
-        
         let p = db.target > 0 ? Math.min((db.saved / db.target) * 100, 100) : 0;
         document.getElementById('goalPercent').innerText = p.toFixed(1) + "%";
         document.getElementById('progressBar').style.width = p + "%";
-        
-        const runner = document.getElementById('runnerPawn');
-        const track = document.querySelector('.track');
-        if(track) {
-            const tw = track.offsetWidth - 50;
-            runner.style.left = (10 + (tw * (p / 100))) + "px";
-        }
+        const run = document.getElementById('runnerPawn');
+        if(run) run.style.left = (10 + (280 * (p / 100))) + "px";
     }
+
+    // Modal Logic
+    let currentModalAction = null;
+    function openModal(t, d, c, ty="text") {
+        document.getElementById('modalTitle').innerText = t;
+        document.getElementById('modalInput').value = d;
+        document.getElementById('modalInput').type = ty;
+        document.getElementById('customModal').style.display = 'flex';
+        currentModalAction = c;
+    }
+    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+    document.getElementById('modalConfirmBtn').onclick = () => { currentModalAction(document.getElementById('modalInput').value); closeModal(); };
 
     function editGoal() {
-        openModal("Tondini, mau nabung buat apa?", db.targetLabel, (newLabel) => {
-            if (newLabel) {
-                openModal("Nominal target berapa?", db.target, (newVal) => {
-                    if (newVal) {
-                        db.targetLabel = newLabel;
-                        db.target = parseInt(newVal);
-                        db.saved = 0; // Reset progres tabungan khusus jika ganti target
-                        sync();
-                    }
-                }, "number");
-            }
+        openModal("Nabung apa?", db.targetLabel, (n) => {
+            openModal("Target berapa?", db.target, (v) => { db.targetLabel = n; db.target = parseInt(v); sync(); }, "number");
         });
     }
 
-    function adjustBalance() {
-        openModal("Set Saldo Total Saat Ini:", db.balance, (newVal) => {
-            if (newVal !== "" && !isNaN(newVal)) { db.balance = parseInt(newVal); sync(); }
-        }, "number");
-    }
-
-    let mode = 'in'; let selCat = '';
-    const cats = {
-        in: ['Gaji', 'Bonus', 'Side Hustle', '⭐ Tabungan Goal'],
-        out: ['Makan', 'Kopi', 'Bensin', 'Belanja', 'Zakat/Donasi']
-    };
+    function adjustBalance() { openModal("Saldo baru:", db.balance, (v) => { db.balance = parseInt(v); sync(); }, "number"); }
 
     function go(m) {
-        mode = m; selCat = '';
-        document.getElementById('homeView').classList.remove('active');
-        document.getElementById('actionView').classList.add('active');
-        document.getElementById('actionTitle').innerText = m === 'in' ? 'Cuan Masuk' : 'Bocor Alus';
-        const box = document.getElementById('catBox'); box.innerHTML = '';
-        cats[m].forEach(c => {
-            const d = document.createElement('div');
-            d.style.padding = "18px"; d.style.background = "var(--surface)"; d.style.borderRadius = "15px"; d.style.textAlign = "center"; d.style.border = "1px solid var(--glass)";
-            d.innerText = c; d.onclick = () => { selCat = c; Array.from(box.children).forEach(x => x.style.borderColor="var(--glass)"); d.style.borderColor="var(--primary)"; };
-            box.appendChild(d);
-        });
+        let val = prompt("Nominal:"); 
+        if(!val) return;
+        let v = parseInt(val);
+        if(m === 'in') { db.balance += v; db.logs.in += v; if(confirm("Masuk tabungan goal?")) db.saved += v; }
+        else { db.balance -= v; db.logs.out += v; if(confirm("Potong tabungan goal?")) db.saved -= v; }
+        sync();
     }
 
-    function back() { document.getElementById('homeView').classList.add('active'); document.getElementById('actionView').classList.remove('active'); }
-
-    function save() {
-        let v = parseInt(document.getElementById('valInput').value);
-        if (!v || !selCat) return alert("Pilih kategori dulu!");
-        if (mode === 'in') {
-            db.balance += v; db.logs.in += v;
-            if (selCat === '⭐ Tabungan Goal') {
-                db.saved += v;
-                if (db.saved >= db.target && db.target > 0) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            }
-        } else {
-            db.balance -= v; db.logs.out += v;
-            if (confirm("Potong dari tabungan khusus " + db.targetLabel + "?")) db.saved -= v;
-        }
-        document.getElementById('valInput').value = ''; sync(); back();
-    }
-
-    // --- REPORT & EXPORT ---
-    let myChart = null;
     function showReport() {
         document.getElementById('reportOverlay').style.display = 'flex';
-        document.getElementById('reportDate').innerText = new Date().toLocaleDateString('id-ID', { dateStyle: 'long' });
-        document.getElementById('inText').innerText = "Rp " + db.logs.in.toLocaleString();
-        document.getElementById('outText').innerText = "Rp " + db.logs.out.toLocaleString();
-        document.getElementById('goalLabelText').innerText = db.targetLabel;
-        document.getElementById('goalValText').innerText = `Rp ${db.saved.toLocaleString()} / Rp ${db.target.toLocaleString()}`;
-
-        const ctx = document.getElementById('myChart').getContext('2d');
-        if (myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
+        document.getElementById('inText').innerText = db.logs.in.toLocaleString();
+        document.getElementById('outText').innerText = db.logs.out.toLocaleString();
+        new Chart(document.getElementById('myChart'), {
             type: 'doughnut',
-            data: {
-                labels: ['Cuan', 'Bocor'],
-                datasets: [{
-                    data: [db.logs.in, db.logs.out],
-                    backgroundColor: ['#00ff87', '#ff3e3e'],
-                    borderWidth: 0, hoverOffset: 10
-                }]
-            },
-            options: { plugins: { legend: { display: false } }, cutout: '70%' }
+            data: { labels:['In','Out'], datasets:[{data:[db.logs.in, db.logs.out], backgroundColor:['#00ff87','#ff3e3e']}]},
+            options: { plugins: { legend: { display: false } } }
         });
     }
 
-    function copyWA() {
-        const text = `🏆 LAPORAN SLAYBANK - ${db.targetLabel}\n--------------------------\n💰 Cuan: Rp ${db.logs.in.toLocaleString()}\n💸 Bocor: Rp ${db.logs.out.toLocaleString()}\n💎 Sisa Saldo: Rp ${db.balance.toLocaleString()}\n🎯 Progress: ${((db.saved/db.target)*100).toFixed(1)}%\n--------------------------\nPowered by SlayBank v11`;
-        navigator.clipboard.writeText(text);
-        alert("Laporan disalin! Silakan paste ke WA.");
-    }
-
-    function downloadPDF() {
-        const element = document.getElementById('reportToPrint');
-        const opt = { 
-            margin: 10, filename: `SlayBank_${db.targetLabel}.pdf`, 
-            image: { type: 'jpeg', quality: 0.98 }, 
-            html2canvas: { scale: 2, backgroundColor: '#000000' }, 
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-        };
-        html2pdf().set(opt).from(element).save();
-    }
-
-    function resetAll() { if(confirm("Hapus semua memori?")) { localStorage.clear(); location.reload(); } }
+    function downloadPDF() { html2pdf().from(document.getElementById('reportToPrint')).save(); }
+    function copyWA() { navigator.clipboard.writeText(`Laporan: In Rp${db.logs.in}, Out Rp${db.logs.out}`); alert("Salin WA Berhasil!"); }
+    function logout() { if(confirm("Logout?")) { localStorage.clear(); location.reload(); } }
+    
     sync();
 </script>
 </body>
